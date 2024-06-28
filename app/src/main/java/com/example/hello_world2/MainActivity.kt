@@ -2,6 +2,7 @@ package com.example.hello_world2
 
 import android.content.Context
 import android.icu.text.ListFormatter.Width
+import android.media.AudioManager
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
@@ -20,8 +21,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.hello_world2.ui.theme.Hello_world2Theme
 import android.widget.ImageView
+import androidx.annotation.Dimension
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
@@ -41,50 +59,64 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val display = windowManager.defaultDisplay
-        val displayMetrics = DisplayMetrics()
-        display.getMetrics(displayMetrics)
-
-        screenWidth = displayMetrics.widthPixels
-        screenHeight = displayMetrics.heightPixels
-
-        fruitImageView = ImageView(this)
-        fruitImageView.setImageResource(R.drawable.apple)
-        fruitImageView.setOnClickListener {
-            renderRandomFruit()
-        }
-
-        setContentView(fruitImageView)
-        renderRandomFruit()
-
-        val lp = fruitImageView.layoutParams
-        lp.width = 200
-        lp.height = 200
-        fruitImageView.layoutParams = lp
-
-
-    }
-
-    override fun onPostCreate(savedInstanceState: Bundle?)
-    {
-        super.onPostCreate(savedInstanceState)
-        val backgroundDrawable = resources.getDrawable(R.drawable.background_image)
-        window.setBackgroundDrawable(backgroundDrawable)
+        setContent {
+            Surface(color = Color.Blue, modifier = Modifier
+                .fillMaxSize()
+                .aspectRatio(1f))
+            {
+                Image(
+                    painter = painterResource(R.drawable.background),
+                    contentDescription = "Background image"
+                )
+            };
+            renderRandomFruit();
+        };
     }
 
 
+    @Composable
     private fun renderRandomFruit()
     {
+        // Remember the current index to avoid recursion
+        var currentIndex = remember { 0 }
 
-        val randomIndex = (0 until fruitImages.size).random()
-        val randomXOffset = (0..screenWidth-200).random()
-        val randomYOffset = (0 .. screenHeight-200).random()
-        fruitImageView.translationX = randomXOffset.toFloat()
-        fruitImageView.translationY = randomYOffset.toFloat()
+        // State variable to hold the new random fruit index
+        var newFruitIndex by remember { mutableIntStateOf(0) }
+        var randomXOffset by remember {mutableIntStateOf(0)}
+        var randomYOffset by remember {mutableIntStateOf(0)}
 
-        fruitImageView.setImageResource(fruitImages[randomIndex])
+        val handleClick: (Context) -> Unit = { context ->
+            val clickSound = AudioManager.FLAG_PLAY_SOUND
+            // Generate a new random index (different logic from currentIndex)
+            newFruitIndex = (0 until fruitImages.size).random()
+
+            val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val display = windowManager.defaultDisplay
+            val displayMetrics = DisplayMetrics()
+            display.getMetrics(displayMetrics)
+
+            screenWidth = displayMetrics.widthPixels
+            screenHeight = displayMetrics.heightPixels
+            randomXOffset = (0..screenWidth/3-200).random()
+            randomYOffset = (0 .. screenHeight/3-200).random()
+
+            // Play the default click sound using system service
+
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioManager.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
+        }
+        val context = LocalContext.current;
+        Image(
+            modifier = Modifier.offset( x = randomXOffset.dp, y = randomYOffset.dp)
+                .clickable(onClick = { handleClick(context) }),
+            painter = painterResource(fruitImages[newFruitIndex]),
+            contentDescription = "An image of a random fruit"
+        )
+
+        // Update currentIndex on state change (new fruit)
+        LaunchedEffect(newFruitIndex) {
+            currentIndex = newFruitIndex
+        }
     }
 }
 
