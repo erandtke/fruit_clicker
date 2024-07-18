@@ -1,44 +1,35 @@
 package com.example.hello_world2
 
 import android.content.Context
-import android.icu.text.ListFormatter.Width
 import android.media.AudioManager
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.hello_world2.ui.theme.Hello_world2Theme
+import com.example.hello_world2.ui.theme.FruitClickerTheme
 import android.widget.ImageView
-import androidx.annotation.Dimension
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -56,10 +47,17 @@ class MainActivity : ComponentActivity() {
 
     private var screenWidth = 0
     private var screenHeight = 0
+    private var fruitList = listOf(
+        Fruit("Apple", 0, R.drawable.apple, Fruit.Ripeness.RIPE),
+        Fruit("Grape", 0, R.drawable.grapes1, Fruit.Ripeness.RIPE),
+        Fruit("Orange", 0, R.drawable.orange, Fruit.Ripeness.RIPE),
+        Fruit("Banana", 0, R.drawable.banana1, Fruit.Ripeness.RIPE));
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            Log.d("dump","dump");
+
             Surface(color = Color.Blue, modifier = Modifier
                 .fillMaxSize()
                 .aspectRatio(1f))
@@ -69,14 +67,19 @@ class MainActivity : ComponentActivity() {
                     contentDescription = "Background image"
                 )
             };
-            renderRandomFruit();
+            FruitCountScreen(fruitList);
+            RenderRandomFruit();
         };
     }
 
 
     @Composable
-    private fun renderRandomFruit()
+    private fun RenderRandomFruit()
     {
+        Log.d("dump","dump");
+        Log.d("dump","dump");
+        Log.d("dump","dump");
+
         // Remember the current index to avoid recursion
         var currentIndex = remember { 0 }
 
@@ -107,7 +110,7 @@ class MainActivity : ComponentActivity() {
         }
         val context = LocalContext.current;
         Image(
-            modifier = Modifier.offset( x = randomXOffset.dp, y = randomYOffset.dp)
+            modifier = Modifier.size(100.dp, 100.dp).offset( x = randomXOffset.dp, y = randomYOffset.dp)
                 .clickable(onClick = { handleClick(context) }),
             painter = painterResource(fruitImages[newFruitIndex]),
             contentDescription = "An image of a random fruit"
@@ -131,7 +134,41 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    Hello_world2Theme {
+    FruitClickerTheme {
         Greeting("Android")
+    }
+}
+
+//
+// ############################
+//
+
+@Composable
+fun FruitCountScreen(fruitList: List<Fruit>) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Other UI elements for your game (optional)
+        fruitList.forEach { fruit ->
+            FruitCounter(fruit = fruit) {
+                // Increment count and recompose on click
+                fruit.count++
+            }
+        }
+    }
+}
+
+@Composable
+fun FruitCounter(fruit: Fruit, onFruitClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable { onFruitClick() } // Add click listener to the whole row
+    ) {
+        Image(
+            modifier = Modifier.size(100.dp,100.dp),
+            painter = painterResource(fruit.resourceId),
+            contentDescription = "An image of a random fruit"
+        );
+        Text(fruit.name + ": ${fruit.count}");
+
     }
 }
