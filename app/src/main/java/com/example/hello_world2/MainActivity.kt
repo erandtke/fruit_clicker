@@ -4,7 +4,6 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.Bundle
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,21 +17,31 @@ import android.widget.ImageView
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+//import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
 class MainActivity : ComponentActivity() {
     private lateinit var fruitImageView: ImageView
@@ -55,8 +64,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            Log.d("dump","dump");
 
             Surface(color = Color.Blue, modifier = Modifier
                 .fillMaxSize()
@@ -67,76 +76,72 @@ class MainActivity : ComponentActivity() {
                     contentDescription = "Background image"
                 )
             };
-            FruitCountScreen(fruitList);
-            RenderRandomFruit();
+            MainContent(fruitList);
         };
     }
 
-
-    @Composable
-    private fun RenderRandomFruit()
+    @Composable fun MainContent(fruitList: List<Fruit>)
     {
-        Log.d("dump","dump");
-        Log.d("dump","dump");
-        Log.d("dump","dump");
+        println("enter main content")
+        val fruitListState = remember {mutableStateListOf(*fruitList.toTypedArray())}
+        RenderRandomFruit(fruitListState);
+        FruitCountScreen(fruitListState);
+    }
 
-        // Remember the current index to avoid recursion
-        var currentIndex = remember { 0 }
+}
 
-        // State variable to hold the new random fruit index
-        var newFruitIndex by remember { mutableIntStateOf(0) }
-        var randomXOffset by remember {mutableIntStateOf(0)}
-        var randomYOffset by remember {mutableIntStateOf(0)}
+@Composable
+private fun RenderRandomFruit(fruitList: SnapshotStateList<Fruit>)
+{
+    // Remember the current index to avoid recursion
+    var currentIndex by remember { mutableIntStateOf(0) }
 
-        val handleClick: (Context) -> Unit = { context ->
-            val clickSound = AudioManager.FLAG_PLAY_SOUND
-            // Generate a new random index (different logic from currentIndex)
-            newFruitIndex = (0 until fruitImages.size).random()
+    // State variable to hold the new random fruit index
+    //var newFruitIndex by remember { mutableIntStateOf(0) }
+    var randomXOffset by remember {mutableIntStateOf(300)}
+    var randomYOffset by remember {mutableIntStateOf(300)}
 
-            val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val display = windowManager.defaultDisplay
-            val displayMetrics = DisplayMetrics()
-            display.getMetrics(displayMetrics)
+    val windowManager = LocalContext.current.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    val audioManager = LocalContext.current.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    Button(onClick =
+    {
+        println("Fruit count before incremented, ${fruitList[currentIndex].name} : ${fruitList[currentIndex].count}")
 
-            screenWidth = displayMetrics.widthPixels
-            screenHeight = displayMetrics.heightPixels
-            randomXOffset = (0..screenWidth/3-200).random()
-            randomYOffset = (0 .. screenHeight/3-200).random()
+        //fruitList[currentIndex].count++;
+        fruitList[currentIndex] = fruitList[currentIndex].copy(count = fruitList[currentIndex].count + 1)
 
-            // Play the default click sound using system service
+        println("Fruit count incremented, ${fruitList[currentIndex].name} : ${fruitList[currentIndex].count}")
 
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            audioManager.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
-        }
-        val context = LocalContext.current;
-        Image(
-            modifier = Modifier.size(100.dp, 100.dp).offset( x = randomXOffset.dp, y = randomYOffset.dp)
-                .clickable(onClick = { handleClick(context) }),
-            painter = painterResource(fruitImages[newFruitIndex]),
-            contentDescription = "An image of a random fruit"
-        )
+        val clickSound = AudioManager.FLAG_PLAY_SOUND
+        // Generate a new random index (different logic from currentIndex)
+        currentIndex = (0 until fruitList.size).random()
 
+        //val windowManager = LocalContext.current.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val display = windowManager.defaultDisplay
+        val displayMetrics = DisplayMetrics()
+        display.getMetrics(displayMetrics)
+
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        randomXOffset = (200..screenWidth/3-200).random()
+        randomYOffset = (200 .. screenHeight/3-200).random()
+
+        // Play the default click sound using system service
+
+        audioManager.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
         // Update currentIndex on state change (new fruit)
-        LaunchedEffect(newFruitIndex) {
-            currentIndex = newFruitIndex
-        }
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
+    },
+        modifier = Modifier.size(150.dp, 150.dp).offset(x = randomXOffset.dp, y = randomYOffset.dp).background(Color.Transparent).padding(0.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FruitClickerTheme {
-        Greeting("Android")
+    {
+        println("recomposing image, fruit res id: ${fruitList[currentIndex].resourceId}")
+        Image(painter = painterResource(fruitList[currentIndex].resourceId), contentDescription = "A picture of a random fruit", modifier = Modifier.size(150.dp, 150.dp), contentScale = ContentScale.Fit)
     }
+
+
+
 }
 
 //
@@ -144,13 +149,12 @@ fun GreetingPreview() {
 //
 
 @Composable
-fun FruitCountScreen(fruitList: List<Fruit>) {
+fun FruitCountScreen(fruitList: SnapshotStateList<Fruit>) {
     Column(modifier = Modifier.fillMaxSize()) {
+        println("FruitCountScreen recomposed")
         // Other UI elements for your game (optional)
         fruitList.forEach { fruit ->
             FruitCounter(fruit = fruit) {
-                // Increment count and recompose on click
-                fruit.count++
             }
         }
     }
@@ -158,17 +162,23 @@ fun FruitCountScreen(fruitList: List<Fruit>) {
 
 @Composable
 fun FruitCounter(fruit: Fruit, onFruitClick: () -> Unit) {
-    Row(
+    Column(
         modifier = Modifier
             .padding(8.dp)
             .clickable { onFruitClick() } // Add click listener to the whole row
     ) {
+        println("FruitCounter recomposed: ${fruit.name}, count: ${fruit.count}")
         Image(
             modifier = Modifier.size(100.dp,100.dp),
             painter = painterResource(fruit.resourceId),
             contentDescription = "An image of a random fruit"
         );
-        Text(fruit.name + ": ${fruit.count}");
+        Text(fruit.name + ": ${fruit.count}",
+            color = Color.White,
+            style = TextStyle(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            ));
 
     }
 }
