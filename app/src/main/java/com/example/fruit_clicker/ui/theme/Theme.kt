@@ -1,4 +1,4 @@
-package com.example.hello_world2.ui.theme
+package com.example.fruit_clicker.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

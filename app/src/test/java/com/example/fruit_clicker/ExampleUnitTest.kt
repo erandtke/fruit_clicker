@@ -1,4 +1,4 @@
-package com.example.hello_world2
+package com.example.fruit_clicker
 
 import org.junit.Test
 

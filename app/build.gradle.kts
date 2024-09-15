@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hello_world2"
+    namespace = "com.fruit_clicker"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.hello_world2"
+        applicationId = "com.fruit_clicker"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
+        versionCode = 5
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -21,12 +21,20 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
